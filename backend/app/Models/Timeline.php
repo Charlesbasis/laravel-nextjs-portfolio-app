@@ -3,57 +3,56 @@
 namespace App\Models;
 
 use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Experience extends Model
+class Timeline extends Model
 {
-    use HasFactory;
-
+    protected $table = 'timeline';
+    
     protected $fillable = [
         'user_id',
-        'company',
-        'position',
-        'description',
+        'type',
+        'title',
+        'organization',
+        'location',
         'start_date',
         'end_date',
         'is_current',
-        'location',
-        'company_url',
-        'technologies',
+        'description',
+        'metadata',
         'order',
-        'slug',
     ];
 
     protected $casts = [
         'start_date' => 'date',
         'end_date' => 'date',
         'is_current' => 'boolean',
-        'technologies' => 'array',
+        'metadata' => 'array',
         'order' => 'integer',
     ];
 
-    protected $appends = ['duration'];
+    protected $appends = ['duration', 'date_range'];
 
-    /**
-     * Get the user that owns the experience.
-     */
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-    /**
-     * Scope to get current experiences.
-     */
+    public function scopeEducation($query)
+    {
+        return $query->where('type', 'education');
+    }
+
+    public function scopeExperience($query)
+    {
+        return $query->where('type', 'experience');
+    }
+
     public function scopeCurrent($query)
     {
         return $query->where('is_current', true);
     }
 
-    /**
-     * Get the duration of the experience.
-     */
     public function getDurationAttribute()
     {
         $start = Carbon::parse($this->start_date);
@@ -63,23 +62,18 @@ class Experience extends Model
         $months = $start->copy()->addYears($years)->diffInMonths($end);
 
         if ($years > 0 && $months > 0) {
-            return "{$years} year" . ($years > 1 ? 's' : '') . " {$months} month" . ($months > 1 ? 's' : '');
+            return "{$years} yr" . ($years > 1 ? 's' : '') . " {$months} mo";
         } elseif ($years > 0) {
-            return "{$years} year" . ($years > 1 ? 's' : '');
+            return "{$years} yr" . ($years > 1 ? 's' : '');
         } else {
-            return "{$months} month" . ($months > 1 ? 's' : '');
+            return "{$months} mo" . ($months > 1 ? 's' : '');
         }
     }
 
-    /**
-     * Get formatted date range.
-     */
     public function getDateRangeAttribute()
     {
         $start = Carbon::parse($this->start_date)->format('M Y');
         $end = $this->is_current ? 'Present' : Carbon::parse($this->end_date)->format('M Y');
-
         return "{$start} - {$end}";
     }
-
 }

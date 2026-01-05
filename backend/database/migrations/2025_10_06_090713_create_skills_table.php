@@ -14,14 +14,14 @@ return new class extends Migration
         Schema::create('skills', function (Blueprint $table) {
             $table->id();
             $table->timestamps();
-            // $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->string('name');
             $table->string('category'); // frontend, backend, database, tools
             $table->integer('proficiency')->default(50); // 0-100
             $table->string('icon_url')->nullable();
             $table->integer('years_of_experience')->nullable();
             $table->integer('order')->default(0);
-            $table->index(['user_id', 'category']);
+            // $table->index(['user_id', 'category']);
             $table->string('slug')->unique();
         });
     }
