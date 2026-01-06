@@ -1,317 +1,244 @@
-import { useQuery, useMutation, useQueryClient, UseQueryOptions } from '@tanstack/react-query';
-import api, { 
-  projectsService, 
-  skillsService, 
-  testimonialsService, 
-  servicesService, 
-  contactService,
-  experienceService,
-  onboardingService,
-} from '../services/api.service';
-import { Project, Skill, Testimonial, Service, ContactFormData, OnboardingData, UserTypeFromAPI } from '../types';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiClient } from '@/src/lib/api';
+import { useState } from 'react';
 
-// ============= Query Keys =============
-export const queryKeys = {
-  projects: {
-    all: ['projects'] as const,
-    lists: () => [...queryKeys.projects.all, 'list'] as const,
-    list: (filters?: Record<string, any>) => [...queryKeys.projects.lists(), filters] as const,
-    details: () => [...queryKeys.projects.all, 'detail'] as const,
-    detail: (slug: string) => [...queryKeys.projects.details(), slug] as const,
-  },
-  skills: {
-    all: ['skills'] as const,
-    lists: () => [...queryKeys.skills.all, 'list'] as const,
-    list: (filters?: Record<string, any>) => [...queryKeys.skills.lists(), filters] as const,
-  },
-  testimonials: {
-    all: ['testimonials'] as const,
-    list: (filters?: Record<string, any>) => [...queryKeys.testimonials.all, filters] as const,
-  },
-  services: {
-    all: ['services'] as const,
-    list: (filters?: Record<string, any>) => [...queryKeys.services.all, filters] as const,
-  },
-  experiences: {
-    all: ['experiences'] as const,
-    list: (filters?: Record<string, any>) => [...queryKeys.experiences.all, filters] as const,
-  },
-  onboarding: {
-    all: ['onboarding'] as const,
-    status: () => [...queryKeys.onboarding.all, 'status'] as const,
-    checkUsername: (username: string) => [...queryKeys.onboarding.all, 'username', username] as const,
-  },
-};
-
-// ============= Default Query Options =============
-const defaultQueryOptions = {
-  staleTime: 5 * 60 * 1000, // 5 minutes
-  gcTime: 5 * 60 * 1000, // 5 minutes (formerly cacheTime in v4)
-  refetchOnWindowFocus: false,
-  retry: 1,
-};
-
-// ============= Projects Hooks =============
-export function useProjects(params?: { 
-  featured?: boolean; 
-  per_page?: number;
-  page?: number;
-  technology?: string;
-  user_id?: number;
-}) {
-  return useQuery({
-    queryKey: queryKeys.projects.list(params),
-    queryFn: () => projectsService.getAll(params),
-    ...defaultQueryOptions,
+// Projects
+export const useProjects = (params?: Record<string, unknown>) => 
+  useQuery({
+    queryKey: ['projects', params],
+    queryFn: () => apiClient.getProjects(params),
   });
-}
 
-export function useProject(slug: string, options?: Partial<UseQueryOptions<Project | null>>) {
-  return useQuery({
-    queryKey: queryKeys.projects.detail(slug),
-    queryFn: () => projectsService.getBySlug(slug),
-    ...defaultQueryOptions,
+export const useProject = (slug: string) => 
+  useQuery({
+    queryKey: ['project', slug],
+    queryFn: () => apiClient.getProject(slug),
     enabled: !!slug,
-    ...options,
-  } as any);
-}
-
-export function useFeaturedProjects(limit?: number) {
-  return useQuery({
-    queryKey: queryKeys.projects.list({ featured: true, per_page: limit }),
-    queryFn: () => projectsService.getFeatured(limit),
-    ...defaultQueryOptions,
   });
-}
 
-// ============= Skills Hooks =============
-export function useSkills(params?: { 
-  category?: string; 
-  grouped?: boolean;
-  user_id?: number;
-}) {
-  return useQuery({
-    queryKey: queryKeys.skills.list(params),
-    queryFn: () => skillsService.getAll(params),
-    ...defaultQueryOptions,
-  });
-}
-
-export function useSkillsByCategory(category: string) {
-  return useQuery({
-    queryKey: queryKeys.skills.list({ category }),
-    queryFn: () => skillsService.getByCategory(category),
-    ...defaultQueryOptions,
-    enabled: !!category,
-  });
-}
-
-export function useGroupedSkills() {
-  return useQuery({
-    queryKey: queryKeys.skills.list({ grouped: true }),
-    queryFn: () => skillsService.getGrouped(),
-    ...defaultQueryOptions,
-  });
-}
-
-// ============= Testimonials Hook =============
-export function useTestimonials(params?: { per_page?: number; page?: number }) {
-  return useQuery({
-    queryKey: queryKeys.testimonials.list(params),
-    queryFn: () => testimonialsService.getAll(params),
-    ...defaultQueryOptions,
-  });
-}
-
-// ============= Services Hook =============
-export function useServices(params?: { per_page?: number; page?: number }) {
-  return useQuery({
-    queryKey: queryKeys.services.list(params),
-    queryFn: () => servicesService.getAll(params),
-    ...defaultQueryOptions,
-  });
-}
-
-// ============= Experiences Hook =============
-export function useExperiences(params?: { user_id?: number; current?: boolean }) {
-  return useQuery({
-    queryKey: queryKeys.experiences.list(params),
-    queryFn: () => experienceService.getAll(params),
-    ...defaultQueryOptions,
-  });
-}
-
-// ============= Mutation Hooks =============
-
-// Contact form submission
-export function useContactSubmit() {
+export const useCreateProject = () => {
+  const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: ContactFormData) => contactService.submit(data),
-    onSuccess: (data) => {
-      console.log('Contact form submitted successfully:', data);
-    },
-    onError: (error) => {
-      console.error('Contact form submission failed:', error);
-    },
+    mutationFn: apiClient.createProject,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['projects'] }),
   });
-}
-
-// Project mutations
-export function useCreateProject() {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: (formData: FormData) => projectsService.create(formData),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
-    },
-  });
-}
-
-export function useUpdateProject() {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: ({ id, formData }: { id: number; formData: FormData }) => 
-      projectsService.update(id, formData),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
-    },
-  });
-}
-
-export function useDeleteProject() {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: (id: number) => projectsService.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
-    },
-  });
-}
-
-// Skill mutations
-export function useCreateSkill() {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: (data: Partial<Skill>) => skillsService.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.skills.all });
-    },
-  });
-}
-
-export function useUpdateSkill() {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<Skill> }) => 
-      skillsService.update(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.skills.all });
-    },
-  });
-}
-
-export function useDeleteSkill() {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: (id: number) => skillsService.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.skills.all });
-    },
-  });
-}
-
-// ============= Prefetch Utilities =============
-export const prefetchQueries = {
-  projects: async (queryClient: ReturnType<typeof useQueryClient>, params?: any) => {
-    return queryClient.prefetchQuery({
-      queryKey: queryKeys.projects.list(params),
-      queryFn: () => projectsService.getAll(params),
-    });
-  },
-  
-  skills: async (queryClient: ReturnType<typeof useQueryClient>, params?: any) => {
-    return queryClient.prefetchQuery({
-      queryKey: queryKeys.skills.list(params),
-      queryFn: () => skillsService.getAll(params),
-    });
-  },
-
-  testimonials: async (queryClient: ReturnType<typeof useQueryClient>, params?: any) => {
-    return queryClient.prefetchQuery({
-      queryKey: queryKeys.testimonials.list(params),
-      queryFn: () => testimonialsService.getAll(params),
-    });
-  },
-
-  services: async (queryClient: ReturnType<typeof useQueryClient>, params?: any) => {
-    return queryClient.prefetchQuery({
-      queryKey: queryKeys.services.list(params),
-      queryFn: () => servicesService.getAll(params),
-    });
-  },
 };
 
-// ============= Onboarding Hooks =============
-
-/**
- * Get onboarding status
- */
-export function useOnboardingStatus() {
-  return useQuery({
-    queryKey: queryKeys.onboarding.status(),
-    queryFn: () => onboardingService.getStatus(),
-    staleTime: 0, // Always fetch fresh
-    gcTime: 0, // Don't cache
-  });
-}
-
-/**
- * Check username availability
- */
-export function useCheckUsername(username: string, enabled: boolean = true) {
-  return useQuery({
-    queryKey: queryKeys.onboarding.checkUsername(username),
-    queryFn: () => onboardingService.checkUsername(username),
-    enabled: enabled && !!username && username.length >= 3,
-    staleTime: 30 * 1000, // Cache for 30 seconds
-    retry: false,
-  });
-}
-
-/**
- * Complete onboarding mutation
- */
-export function useCompleteOnboarding() {
-  const queryClient = useQueryClient();
-  
+export const useUpdateProject = () => {
+  const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: OnboardingData) => onboardingService.complete(data),
-    onSuccess: (data) => {
-      // Invalidate relevant queries
-      queryClient.invalidateQueries({ queryKey: queryKeys.onboarding.all });
-      queryClient.invalidateQueries({ queryKey: ['user'] }); // Assuming you have a user query
-      
-      console.log('✅ Onboarding completed successfully:', data);
-    },
-    onError: (error) => {
-      console.error('❌ Onboarding failed:', error);
-    },
+    mutationFn: ({ id, data }: { id: number; data: FormData }) => 
+      apiClient.updateProject(id, data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['projects'] }),
   });
-}
+};
 
-export const useUserTypes = () => {
-  return useQuery({
-    queryKey: ['user-types'],
-    queryFn: async () => {
-      const response = await api.get('/user-types');
-      return response.data.data as UserTypeFromAPI[];
-    },
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+export const useDeleteProject = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: apiClient.deleteProject,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['projects'] }),
   });
+};
+
+// Skills
+export const useSkills = (params?: Record<string, unknown>) => 
+  useQuery({
+    queryKey: ['skills', params],
+    queryFn: () => apiClient.getSkills(params),
+  });
+
+export const useCreateSkill = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: apiClient.createSkill,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['skills'] }),
+  });
+};
+
+export const useUpdateSkill = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) => 
+      apiClient.updateSkill(id, data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['skills'] }),
+  });
+};
+
+export const useDeleteSkill = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: apiClient.deleteSkill,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['skills'] }),
+  });
+};
+
+// Profile
+export const usePublicProfile = (username: string) => 
+  useQuery({
+    queryKey: ['profile', username],
+    queryFn: () => apiClient.getPublicProfile(username),
+    enabled: !!username,
+  });
+
+export const useCurrentProfile = () => 
+  useQuery({
+    queryKey: ['profile', 'current'],
+    queryFn: apiClient.getCurrentProfile,
+  });
+
+export const useUpdateProfile = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: apiClient.updateProfile,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['profile'] }),
+  });
+};
+
+// Dashboard
+export const useDashboardStats = () => 
+  useQuery({
+    queryKey: ['dashboard', 'stats'],
+    queryFn: apiClient.getDashboardStats,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+  });
+
+export const useRecentProjects = (limit = 5) => 
+  useQuery({
+    queryKey: ['dashboard', 'recent-projects', limit],
+    queryFn: () => apiClient.getRecentProjects(limit),
+  });
+
+export const useRecentMessages = (limit = 10) => 
+  useQuery({
+    queryKey: ['dashboard', 'recent-messages', limit],
+    queryFn: () => apiClient.getRecentMessages(limit),
+  });
+
+// Experiences
+export const useExperiences = (username?: string) => 
+  useQuery({
+    queryKey: ['experiences', username],
+    queryFn: () => apiClient.getExperiences(username),
+  });
+
+export const useCreateExperience = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: apiClient.createExperience,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['experiences'] }),
+  });
+};
+
+export const useUpdateExperience = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) => 
+      apiClient.updateExperience(id, data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['experiences'] }),
+  });
+};
+
+export const useDeleteExperience = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: apiClient.deleteExperience,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['experiences'] }),
+  });
+};
+
+// Education
+export const useEducation = (username?: string) => 
+  useQuery({
+    queryKey: ['education', username],
+    queryFn: () => apiClient.getEducation(username),
+  });
+
+export const useCreateEducation = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: apiClient.createEducation,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['education'] }),
+  });
+};
+
+export const useUpdateEducation = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) => 
+      apiClient.updateEducation(id, data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['education'] }),
+  });
+};
+
+export const useDeleteEducation = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: apiClient.deleteEducation,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['education'] }),
+  });
+};
+
+// Certifications
+export const useCertifications = (username?: string) => 
+  useQuery({
+    queryKey: ['certifications', username],
+    queryFn: () => apiClient.getCertifications(username),
+  });
+
+export const useCreateCertification = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: apiClient.createCertification,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['certifications'] }),
+  });
+};
+
+export const useUpdateCertification = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) => 
+      apiClient.updateCertification(id, data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['certifications'] }),
+  });
+};
+
+export const useDeleteCertification = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: apiClient.deleteCertification,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['certifications'] }),
+  });
+};
+
+// Stats
+export const useUserStats = (username: string) => 
+  useQuery({
+    queryKey: ['stats', username],
+    queryFn: () => apiClient.getUserStats(username),
+    enabled: !!username,
+  });
+
+export const useContactSubmit = () => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // 2. Use Record<string, unknown> instead of 'any'
+  const submit = async (formData: Record<string, unknown>) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await apiClient.submitContact(formData);
+      return response;
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Submission failed';
+      setError(message);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return { submit, isLoading, error };
 };

@@ -419,7 +419,7 @@ export default function Projects() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-4xl font-bold mb-4">Like What You See?</h2>
           <p className="text-xl mb-8 text-blue-100">
-            Let's work together on your next project
+            Let&apos;s work together on your next project.
           </p>
           <Link
             href="/contact"

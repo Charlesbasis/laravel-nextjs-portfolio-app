@@ -65,7 +65,7 @@ export const useOnboarding = () => {
       }
 
       return response;
-    } catch (err: any) {
+    } catch (err: unknown) {
       const errorMessage = getErrorMessage(err);
       setError(errorMessage);
       throw err;

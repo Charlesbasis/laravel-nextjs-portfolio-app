@@ -352,23 +352,6 @@ export interface RegisterData extends LoginCredentials {
   password_confirmation: string;
 }
 
-export interface Experience {
-  id: number;
-  company: string;
-  position: string;
-  description?: string;
-  start_date: string;
-  end_date?: string | null;
-  is_current: boolean;
-  location?: string;
-  company_url?: string;
-  technologies?: string[];
-  order?: number;
-  user_id: number;
-  created_at: string;
-  updated_at: string;
-}
-
 export interface ProjectsGridProps {
   projects: Project[];
   isLoading?: boolean;
@@ -387,8 +370,7 @@ export interface EducationCertificationsProps {
 }
 
 export interface OnboardingData {
-  user_type_id: any;
-  // user_type: string;
+  user_type_id: number | string; // Replaced any
   full_name: string;
   username: string;
   job_title: string;
@@ -406,8 +388,8 @@ export interface OnboardingData {
     live_url?: string;
   };
   skills: string[];
-  profile_data: Record<string, any>;
-  activity_data: Record<string, any>;
+  profile_data: Record<string, unknown>; // Replaced any
+  activity_data: Record<string, unknown>; // Replaced any
   experience?: {
     company: string;
     position: string;
@@ -458,14 +440,14 @@ export interface FormData {
   project_description: string;
   project_technologies: string[];
   skills: string[];
-  profile_data: Record<string, any>;
-  activity_data: Record<string, any>;
+  profile_data: Record<string, unknown>;
+  activity_data: Record<string, unknown>;
 }
 
 export interface Step {
   id: number;
   title: string;
-  icon: any;
+  icon: ElementType; // Replaced any (for Lucide components)
   required?: boolean;
 }
 
@@ -474,7 +456,7 @@ export interface OnboardingStep {
   title: string;
   component: string;
   required?: boolean;
-  validationRules?: any[];
+  validationRules?: Record<string, unknown>[]; // Replaced any
 }
 
 export interface ProfileField {
@@ -508,7 +490,7 @@ export interface DashboardWidget {
   title: string;
   component: string;
   grid: { x: number; y: number; w: number; h: number };
-  config?: any;
+  config?: Record<string, unknown>;
 }
 
 export interface PortfolioSection {

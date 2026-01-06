@@ -8,14 +8,20 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Add user_id and skills data directly to skills table
         Schema::table('skills', function (Blueprint $table) {
-            $table->foreignId('user_id')->after('id')->constrained()->onDelete('cascade');
-            $table->string('proficiency')->default('intermediate')->after('category');
-            $table->integer('years_experience')->nullable()->after('proficiency');
+            if (!Schema::hasColumn('skills', 'user_id')) {
+                $table->foreignId('user_id')->after('id')->constrained()->onDelete('cascade');
+            }
+
+            if (!Schema::hasColumn('skills', 'proficiency')) {
+                $table->string('proficiency')->default('intermediate')->after('category');
+            }
+
+            if (!Schema::hasColumn('skills', 'years_experience')) {
+                $table->integer('years_experience')->nullable()->after('proficiency');
+            }
         });
 
-        // Drop the pivot table
         Schema::dropIfExists('user_skills');
     }
 
@@ -31,7 +37,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->foreignId('skill_id')->constrained()->onDelete('cascade');
-            $table->string('proficiency')->default('intermediate');
+            $table->string('proficiency')->nullable();
             $table->integer('years_experience')->nullable();
             $table->timestamps();
             $table->unique(['user_id', 'skill_id']);

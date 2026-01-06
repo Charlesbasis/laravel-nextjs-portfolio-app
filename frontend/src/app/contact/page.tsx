@@ -125,7 +125,7 @@ export default function Contact() {
           <div className="text-center">
             <h1 className="text-5xl font-bold mb-6">Get In Touch</h1>
             <p className="text-xl text-blue-100 max-w-3xl mx-auto leading-relaxed">
-              Have a project in mind or just want to chat? I'd love to hear from you.
+              Have a project in mind or just want to chat? I&apos;d love to hear from you.
               Fill out the form below or reach out through any of the contact methods.
             </p>
           </div>
@@ -174,7 +174,7 @@ export default function Contact() {
                     Send a Message
                   </h2>
                   <p className="text-gray-600">
-                    Fill out the form below and I'll get back to you within 24 hours.
+                    Fill out the form below and I&apos;ll get back to you within 24 hours.
                   </p>
                 </div>
 
@@ -183,7 +183,7 @@ export default function Contact() {
                     <CheckCircle className="text-green-600 mr-3" size={24} />
                     <div>
                       <p className="text-green-800 font-semibold">Message sent successfully!</p>
-                      <p className="text-green-700 text-sm">I'll get back to you soon.</p>
+                      <p className="text-green-700 text-sm">I&apos;ll get back to you soon.</p>
                     </div>
                   </div>
                 )}
@@ -343,7 +343,7 @@ export default function Contact() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-4xl font-bold mb-4">Ready to Start Your Project?</h2>
           <p className="text-xl mb-8 text-blue-100">
-            Let's discuss how I can help bring your ideas to life.
+            Let&apos;s discuss how I can help bring your ideas to life.
           </p>
           <div className="flex flex-wrap gap-4 justify-center">
             <a

@@ -1,9 +1,8 @@
-import api, { handleApiRequest, tokenManager } from '../lib/api';
+import api, { handleApiRequest } from '../lib/api';
 import { extractData, extractNestedData } from '../lib/utils';
 import {
   ApiResponse,
   ContactFormData,
-  Experience,
   LoginCredentials,
   OnboardingCompleteResponse,
   OnboardingData,
@@ -17,8 +16,6 @@ import {
   UsernameCheckResponse
 } from '../types';
 
-
-
 // ============= Projects Service =============
 export const projectsService = {
   getAll: async (params?: { 
@@ -27,9 +24,9 @@ export const projectsService = {
     page?: number;
     technology?: string;
   }): Promise<Project[]> => {
-    const response = await handleApiRequest(
-      () => api.get('/projects', { params }),
-      { data: [] }
+    // Note: handleApiRequest refactored to take only the promise
+    const response = await handleApiRequest<ApiResponse<Project[]>>(
+      api.get('/projects', { params })
     );
     
     const extracted = extractData<Project[]>(response);
@@ -37,9 +34,8 @@ export const projectsService = {
   },
 
   getBySlug: async (slug: string): Promise<Project | null> => {
-    const response = await handleApiRequest(
-      () => api.get(`/projects/${slug}`),
-      null
+    const response = await handleApiRequest<ApiResponse<Project>>(
+      api.get(`/projects/${slug}`)
     );
     
     if (!response) return null;
@@ -52,21 +48,21 @@ export const projectsService = {
   },
 
   create: async (formData: FormData): Promise<ApiResponse<Project>> => {
-    const { data } = await api.post('/projects', formData, {
+    const { data } = await api.post<ApiResponse<Project>>('/projects', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
     return data;
   },
 
   update: async (id: number, formData: FormData): Promise<ApiResponse<Project>> => {
-    const { data } = await api.post(`/projects/${id}`, formData, {
+    const { data } = await api.post<ApiResponse<Project>>(`/projects/${id}`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
     return data;
   },
 
   delete: async (id: number): Promise<ApiResponse<void>> => {
-    const { data } = await api.delete(`/projects/${id}`);
+    const { data } = await api.delete<ApiResponse<void>>(`/projects/${id}`);
     return data;
   },
 };
@@ -83,25 +79,17 @@ export const skillsService = {
       grouped: params?.grouped ? 'true' : undefined
     };
 
-    const response = await handleApiRequest(
-      () => api.get('/skills', { params: queryParams }),
-      params?.grouped ? {} : []
+    const response = await handleApiRequest<ApiResponse<Skill[] | Record<string, Skill[]>>>(
+      api.get('/skills', { params: queryParams })
     );
     
-    // If grouped, return as-is (it's already an object)
     if (params?.grouped) {
       const extracted = extractData<Record<string, Skill[]>>(response);
       return extracted ?? {};
     }
     
-    // Otherwise, ensure it's an array
     const extracted = extractData<Skill[]>(response);
     return Array.isArray(extracted) ? extracted : [];
-  },
-
-  getByCategory: async (category: string): Promise<Skill[]> => {
-    const result = await skillsService.getAll({ category });
-    return Array.isArray(result) ? result : [];
   },
 
   getGrouped: async (): Promise<Record<string, Skill[]>> => {
@@ -109,105 +97,9 @@ export const skillsService = {
     return Array.isArray(result) ? {} : result as Record<string, Skill[]>;
   },
 
-  getById: async (id: number): Promise<Skill | null> => {
-    const response = await handleApiRequest(
-      () => api.get(`/skills/${id}`),
-      null
-    );
-    
-    if (!response) return null;
-    return extractData<Skill>(response);
-  },
-
   create: async (data: Partial<Skill>): Promise<ApiResponse<Skill>> => {
-    const { data: responseData } = await api.post('/skills', data);
+    const { data: responseData } = await api.post<ApiResponse<Skill>>('/skills', data);
     return responseData;
-  },
-
-  update: async (id: number, data: Partial<Skill>): Promise<ApiResponse<Skill>> => {
-    const { data: responseData } = await api.put(`/skills/${id}`, data);
-    return responseData;
-  },
-
-  delete: async (id: number): Promise<ApiResponse<void>> => {
-    const { data } = await api.delete(`/skills/${id}`);
-    return data;
-  },
-};
-
-// ============= Testimonials Service =============
-export const testimonialsService = {
-  getAll: async (params?: { per_page?: number; page?: number }): Promise<Testimonial[]> => {
-    const response = await handleApiRequest(
-      () => api.get('/testimonials', { params }),
-      { data: [] }
-    );
-    
-    const extracted = extractData<Testimonial[]>(response);
-    return Array.isArray(extracted) ? extracted : [];
-  },
-
-  getById: async (id: number): Promise<Testimonial | null> => {
-    const response = await handleApiRequest(
-      () => api.get(`/testimonials/${id}`),
-      null
-    );
-    
-    if (!response) return null;
-    return extractData<Testimonial>(response);
-  },
-
-  create: async (data: Partial<Testimonial>): Promise<ApiResponse<Testimonial>> => {
-    const { data: responseData } = await api.post('/testimonials', data);
-    return responseData;
-  },
-
-  update: async (id: number, data: Partial<Testimonial>): Promise<ApiResponse<Testimonial>> => {
-    const { data: responseData } = await api.put(`/testimonials/${id}`, data);
-    return responseData;
-  },
-
-  delete: async (id: number): Promise<ApiResponse<void>> => {
-    const { data } = await api.delete(`/testimonials/${id}`);
-    return data;
-  },
-};
-
-// ============= Services Service =============
-export const servicesService = {
-  getAll: async (params?: { per_page?: number; page?: number }): Promise<Service[]> => {
-    const response = await handleApiRequest(
-      () => api.get('/services', { params }),
-      { data: [] }
-    );
-    
-    const extracted = extractData<Service[]>(response);
-    return Array.isArray(extracted) ? extracted : [];
-  },
-
-  getById: async (id: number): Promise<Service | null> => {
-    const response = await handleApiRequest(
-      () => api.get(`/services/${id}`),
-      null
-    );
-    
-    if (!response) return null;
-    return extractData<Service>(response);
-  },
-
-  create: async (data: Partial<Service>): Promise<ApiResponse<Service>> => {
-    const { data: responseData } = await api.post('/services', data);
-    return responseData;
-  },
-
-  update: async (id: number, data: Partial<Service>): Promise<ApiResponse<Service>> => {
-    const { data: responseData } = await api.put(`/services/${id}`, data);
-    return responseData;
-  },
-
-  delete: async (id: number): Promise<ApiResponse<void>> => {
-    const { data } = await api.delete(`/services/${id}`);
-    return data;
   },
 };
 
@@ -215,15 +107,16 @@ export const servicesService = {
 export const contactService = {
   submit: async (formData: ContactFormData): Promise<{ success: boolean; message: string }> => {
     try {
-      const { data } = await api.post('/contact/submit', formData);
+      const { data } = await api.post<ApiResponse<null>>('/contact/submit', formData);
       return {
         success: data.success,
         message: data.message || 'Message sent successfully!',
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'An error occurred';
       return {
         success: false,
-        message: error.response?.data?.message || 'Failed to send message. Please try again.',
+        message,
       };
     }
   },
@@ -232,32 +125,20 @@ export const contactService = {
     status?: string; 
     per_page?: number; 
     page?: number;
-  }): Promise<any[]> => {
-    const response = await handleApiRequest(
-      () => api.get('/contacts', { params }),
-      { data: [] }
+  }): Promise<unknown[]> => {
+    const response = await handleApiRequest<ApiResponse<unknown[]>>(
+      api.get('/contacts', { params })
     );
     
-    const extracted = extractData<any[]>(response);
+    const extracted = extractData<unknown[]>(response);
     return Array.isArray(extracted) ? extracted : [];
-  },
-
-  updateStatus: async (id: number, status: string): Promise<ApiResponse<any>> => {
-    const { data } = await api.put(`/contacts/${id}`, { status });
-    return data;
-  },
-
-  delete: async (id: number): Promise<ApiResponse<void>> => {
-    const { data } = await api.delete(`/contacts/${id}`);
-    return data;
   },
 };
 
 // ============= Auth Service =============
 export const authService = {
-  login: async (credentials: LoginCredentials): Promise<{ user: User; token: string; needs_onboarding: any }> => {
-    // const { data } = await api.post('/auth/login', credentials);
-    const { data } = await api.post('/login', credentials);
+  login: async (credentials: LoginCredentials): Promise<{ user: User; token: string; needs_onboarding: boolean }> => {
+    const { data } = await api.post<ApiResponse<{ user: User; token: string; needs_onboarding: boolean }>>('/login', credentials);
     
     if (data.success && data.data?.token) {
       if (typeof window !== 'undefined') {
@@ -268,24 +149,8 @@ export const authService = {
     return data.data;
   },
 
-  // debug: async (): Promise<void> => {
-  //   console.log('🔍 Auth Debug Info:');
-  //   console.log('📝 Stored Token:', tokenManager.get() ? 'Present' : 'Missing');
-  //   console.log('🌐 API Base URL:', api.defaults.baseURL);
-
-  //   try {
-  //     const testResponse = await api.get('/auth/user');
-  //     console.log('✅ Auth test response:', testResponse.data);
-  //   } catch (error) {
-  //     console.log('❌ Auth test failed:', {
-  //       // status: getErrorStatus(error),
-  //       // message: getErrorMessage(error)
-  //     });
-  //   }
-  // },
-
   register: async (userData: RegisterData): Promise<{ user: User; token: string }> => {
-    const { data } = await api.post('/register', userData);
+    const { data } = await api.post<ApiResponse<{ user: User; token: string }>>('/register', userData);
     
     if (data.success && data.data?.token) {
       if (typeof window !== 'undefined') {
@@ -298,7 +163,6 @@ export const authService = {
 
   logout: async (): Promise<void> => {
     await api.post('/logout');
-    
     if (typeof window !== 'undefined') {
       localStorage.removeItem('auth_token');
     }
@@ -306,20 +170,21 @@ export const authService = {
   
   getCurrentUser: async (): Promise<User | null> => {
     try {
-      const response = await handleApiRequest(
-        () => api.get('/user'),
-        null
+      const response = await handleApiRequest<ApiResponse<User>>(
+        api.get('/user')
       );
 
-      console.log('🔍 Raw API Response from getCurrentUser:', response);
-
-      // Try different extraction methods with proper null checks
+      // extraction with proper type assertions
       const userData = extractNestedData<User>(response, 'data.user')
-        || extractData<User>(response)
-        || (response && typeof response === 'object' && 'id' in response ? response : null);
+        || extractData<User>(response);
 
-      if (userData && (userData as any).id) {
-        return userData;
+      if (userData && (userData as User).id) {
+        return userData as User;
+      }
+
+      // Check if response itself is the user object
+      if (response && typeof response === 'object' && 'id' in (response as object)) {
+        return response as unknown as User;
       }
 
       return null;
@@ -330,104 +195,39 @@ export const authService = {
   },
 };
 
-// ============= Experience Service =============
-export const experienceService = {
-  getAll: async (params?: { 
-    user_id?: number; 
-    current?: boolean;
-  }): Promise<Experience[]> => {
-    const queryParams = {
-      ...params,
-      current: params?.current ? 'true' : undefined
-    };
-
-    const response = await handleApiRequest(
-      () => api.get('/experiences', { params: queryParams }),
-      { data: [] }
-    );
-    
-    const extracted = extractData<Experience[]>(response);
-    return Array.isArray(extracted) ? extracted : [];
-  },
-
-  getById: async (id: number): Promise<Experience | null> => {
-    const response = await handleApiRequest(
-      () => api.get(`/experiences/${id}`),
-      null
-    );
-    
-    if (!response) return null;
-    return extractData<Experience>(response);
-  },
-
-  create: async (data: Partial<Experience>): Promise<ApiResponse<Experience>> => {
-    const { data: responseData } = await api.post('/experiences', data);
-    return responseData;
-  },
-
-  update: async (id: number, data: Partial<Experience>): Promise<ApiResponse<Experience>> => {
-    const { data: responseData } = await api.put(`/experiences/${id}`, data);
-    return responseData;
-  },
-
-  delete: async (id: number): Promise<ApiResponse<void>> => {
-    const { data } = await api.delete(`/experiences/${id}`);
-    return data;
-  },
-};
-
 // ============= Onboarding Service =============
 export const onboardingService = {
-  /**
-   * Check username availability
-   */
   checkUsername: async (username: string): Promise<UsernameCheckResponse> => {
-    const { data } = await api.get(`/onboarding/check-username/${username}`);
+    const { data } = await api.get<UsernameCheckResponse>(`/onboarding/check-username/${username}`);
     return data;
   },
 
-  /**
-   * Get onboarding status
-   */
   getStatus: async (): Promise<OnboardingStatusResponse> => {
-    const { data } = await api.get('/onboarding/status');
+    const { data } = await api.get<OnboardingStatusResponse>('/onboarding/status');
     return data;
   },
 
-  /**
-   * Complete onboarding
-   */
   complete: async (onboardingData: OnboardingData): Promise<OnboardingCompleteResponse> => {
-    const { data } = await api.post('/onboarding/complete', onboardingData);
+    const { data } = await api.post<OnboardingCompleteResponse>('/onboarding/complete', onboardingData);
     return data;
   },
-};
-
-let requestCount = 0;
-const MAX_REQUESTS_PER_MINUTE = 60;
-
-const retryWithBackoff = async <T>(
-  requestFn: () => Promise<T>,
-  maxRetries: number = 3,
-  baseDelay: number = 1000
-): Promise<T> => {
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
-    try {
-      return await requestFn();
-    } catch (error: any) {
-      // If it's a 429 error and we have retries left
-      if (error?.status === 429 && attempt < maxRetries - 1) {
-        const delay = baseDelay * Math.pow(2, attempt); // Exponential backoff
-        console.warn(`Rate limited. Retrying in ${delay}ms... (Attempt ${attempt + 1}/${maxRetries})`);
-        await new Promise(resolve => setTimeout(resolve, delay));
-        continue;
-      }
-      throw error; // Re-throw if not a 429 or no retries left
-    }
-  }
-  throw new Error('Max retries exceeded');
 };
 
 export { dashboardApi } from './dashboardApi.service';
-
 export default api;
+
+// ============= Testimonials Service =============
+export const testimonialsService = {
+  getAll: async () => {
+    const response = await handleApiRequest<ApiResponse<Testimonial[]>>(api.get('/testimonials'));
+    return extractData<Testimonial[]>(response) || [];
+  }
+};
+
+// ============= Services Service =============
+export const servicesService = {
+  getAll: async () => {
+    const response = await handleApiRequest<ApiResponse<Service[]>>(api.get('/services'));
+    return extractData<Service[]>(response) || [];
+  }
+};

@@ -1,12 +1,14 @@
 import { MetadataRoute } from 'next';
 
 export default function robots(): MetadataRoute.Robots {
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://app.cvhowlader.com';
+
   return {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: ['/dashboard/', '/auth/'],
+      disallow: ['/dashboard/', '/onboarding/', '/auth/'],
     },
-    sitemap: 'https://yourportfolio.com/sitemap.xml',
+    sitemap: `${baseUrl}/sitemap.xml`,
   };
 }

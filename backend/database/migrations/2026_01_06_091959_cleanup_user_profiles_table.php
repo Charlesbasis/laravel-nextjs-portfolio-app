@@ -13,12 +13,11 @@ return new class extends Migration
 
         if (Schema::hasTable('user_profiles')) {
             Schema::table('user_profiles', function (Blueprint $table) {
-                // Drop user_type_id safely
                 if (Schema::hasColumn('user_profiles', 'user_type_id')) {
                     $table->dropColumn('user_type_id');
                 }
 
-                // Drop the other columns safely one by one
+                // Check each column individually before dropping
                 $columnsToDrop = ['headline', 'current_status', 'institution', 'field_of_interest'];
                 foreach ($columnsToDrop as $column) {
                     if (Schema::hasColumn('user_profiles', $column)) {
@@ -26,7 +25,7 @@ return new class extends Migration
                     }
                 }
 
-                // Ensure this column exists before trying to change it
+                // Ensure the column exists before trying to change it
                 if (Schema::hasColumn('user_profiles', 'custom_fields')) {
                     $table->json('custom_fields')->nullable()->change();
                 }

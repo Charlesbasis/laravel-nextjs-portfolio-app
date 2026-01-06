@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\Api\PublicController;
 use App\Http\Controllers\API\V1\AuthController;
+use App\Http\Controllers\API\V1\CertificationController;
 use App\Http\Controllers\API\V1\DashboardController;
 use App\Http\Controllers\API\V1\OnboardingController;
 use App\Http\Controllers\API\V1\PortfolioController;
@@ -12,13 +14,35 @@ use App\Http\Middleware\EnsureOnboardingCompleted;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
-    
-    // ========================================
-    // PUBLIC ROUTES - Single Portfolio Endpoint
-    // ========================================
-    Route::get('/portfolio/{username}', [PortfolioController::class, 'show']);
-    Route::post('/contact', [ContactController::class, 'submit']);
-    
+
+/*
+|--------------------------------------------------------------------------
+| Public API Routes (No Authentication Required)
+|--------------------------------------------------------------------------
+*/
+
+    // Sitemap endpoints
+    Route::prefix('public')->group(function () {
+        Route::get('/portfolios', [PublicController::class, 'portfolios']);
+        Route::get('/projects', [PublicController::class, 'projects']);
+        Route::get('/sitemap-data', [PublicController::class, 'sitemapData']);
+    });
+
+    // Public user profiles
+    Route::get('/users/{username}/profile', [ProfileController::class, 'showPublic']);
+    Route::get('/users/{username}/stats', [ProfileController::class, 'stats']);
+    Route::get('/users/{username}/experiences', [ProfileController::class, 'experiences']);
+    Route::get('/users/{username}/education', [ProfileController::class, 'education']);
+    Route::get('/users/{username}/certifications', [ProfileController::class, 'certifications']);
+
+    // Public projects
+    Route::get('/projects', [ProjectsController::class, 'index']);
+    Route::get('/projects/{slug}', [ProjectsController::class, 'show']);
+
+    // Public skills (with optional user_id filter)
+    Route::get('/skills', [SkillsController::class, 'index']);
+
+
     // ========================================
     // AUTH ROUTES
     // ========================================

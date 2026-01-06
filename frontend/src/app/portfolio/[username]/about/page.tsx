@@ -51,7 +51,7 @@ export default function About() {
             Profile Not Set Up
           </h2>
           <p className="text-gray-600 mb-6">
-            You haven't set up your profile yet. Please complete your profile to view this page.
+            You haven&apos;t set up your profile yet. Please complete your profile to view this page.
           </p>
           <Link
             href="/dashboard/settings"
@@ -246,9 +246,9 @@ export default function About() {
       {/* CTA Section */}
       <section className="py-16 bg-gradient-to-r from-blue-600 to-blue-800 text-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-4xl font-bold mb-4">Let's Work Together</h2>
+          <h2 className="text-4xl font-bold mb-4">Let&apos;s Work Together</h2>
           <p className="text-xl mb-8 text-blue-100">
-            Have a project in mind? I'd love to hear about it and see how I can help.
+            Have a project in mind? I&apos;d love to hear about it and see how I can help.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link

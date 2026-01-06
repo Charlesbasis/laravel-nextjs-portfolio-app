@@ -1,241 +1,69 @@
-'use client';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
+import { apiClient, getToken } from '@/src/lib/api';
 
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import { tokenManager } from '../lib/api';
-import { RegisterData, User } from '../types';
-import { authService } from '../services/api.service';
-
-interface AuthState {
-  user: User | null;
-  token: string | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  error: string | null;
-  isInitialized: boolean;
-  needs_onboarding: boolean;
-  
-  login: (email: string, password: string) => Promise<{ 
-    user: User; 
-    needs_onboarding: any;
-    token: string;
-  }>;
-  logout: () => Promise<void>;
-  register: (data: RegisterData) => Promise<void>;
-  setUser: (user: User | null) => void;
-  setToken: (token: string | null) => void;
-  checkAuth: () => Promise<void>;
-  clearError: () => void;
-  initialize: () => Promise<void>; 
+interface AuthResponse {
+  token: string;
+  user: Record<string, unknown>;
+  needs_onboarding?: boolean;
 }
 
-export const useAuth = create<AuthState>()(
-  persist(
-    (set, get) => ({
-      user: null,
-      token: null,
-      isAuthenticated: false,
-      isLoading: false,
-      error: null,
-      isInitialized: false,
-      needs_onboarding: false,
+export function useAuth() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const token = getToken();
 
-      initialize: async () => {
-        const token = get().token;
-        
-        if (!token) {
-          set({ isInitialized: true, isLoading: false });
-          return;
-        }
+  // Get current user
+  const { data: user, isLoading, error, refetch: checkAuth } = useQuery({
+    queryKey: ['user'],
+    queryFn: apiClient.getUser,
+    enabled: !!token,
+    retry: false,
+    staleTime: 5 * 60 * 1000,
+  });
 
-        set({ isLoading: true });
-        
-        try {
-          const user = await authService.getCurrentUser();
-          
-          if (user) {
-            set({ 
-              user, 
-              isAuthenticated: true, 
-              isInitialized: true,
-              isLoading: false 
-            });
-          } else {
-            // Token is invalid
-            tokenManager.remove();
-            set({ 
-              user: null, 
-              token: null, 
-              isAuthenticated: false, 
-              isInitialized: true,
-              isLoading: false,
-            });
-          }
-        } catch (error) {
-          console.error('Auth initialization failed:', error);
-          tokenManager.remove();
-          set({ 
-            user: null, 
-            token: null, 
-            isAuthenticated: false, 
-            isInitialized: true,
-            isLoading: false 
-          });
-        }
-      },
+  // Login mutation
+  const loginMutation = useMutation({
+    mutationFn: ({ email, password }: { email: string; password: string }) => 
+      apiClient.login(email, password) as Promise<AuthResponse>, // 2. Cast the response
+    onSuccess: (data) => {
+      queryClient.setQueryData(['user'], data.user);
+      if (data.needs_onboarding) {
+        router.push('/onboarding');
+      } else {
+        router.push('/dashboard');
+      }
+    },
+  });
 
-      login: async (email: string, password: string) => {
-        set({ isLoading: true, error: null });
-        try {
-          const response = await authService.login({ email, password });
-          const { user, token, needs_onboarding } = response;
+  // Register mutation
+  const registerMutation = useMutation({
+    mutationFn: (userData: any) => apiClient.register(userData) as Promise<AuthResponse>,
+    onSuccess: (data) => {
+      queryClient.setQueryData(['user'], data.user);
+      router.push('/onboarding');
+    },
+  });
 
-          // Set token in both store and tokenManager
-          tokenManager.set(token);
-          
-          set({
-            user,
-            token,
-            isAuthenticated: true,
-            isLoading: false,
-            error: null,
-            isInitialized: true,
-            needs_onboarding: false,
-          });
+  // Logout mutation
+  const logoutMutation = useMutation({
+    mutationFn: apiClient.logout,
+    onSuccess: () => {
+      queryClient.clear();
+      router.push('/auth/login');
+    },
+  });
 
-          console.log('✅ Login successful:', { user, needs_onboarding });
-
-          // Return the data for the component to use
-          return { user, needs_onboarding, token };
-        } catch (error: any) {
-          const errorMessage = error.response?.data?.message || 'Login failed. Please try again.';
-          set({
-            isLoading: false,
-            error: errorMessage,
-            isAuthenticated: false,
-            user: null,
-            token: null
-          });
-          throw new Error(errorMessage);
-        }
-      },
-
-      register: async (data: RegisterData) => {
-        set({ isLoading: true, error: null });
-        try {
-          const { user, token } = await authService.register(data);
-          tokenManager.set(token);
-          set({ 
-            user, 
-            token, 
-            isAuthenticated: true, 
-            isLoading: false,
-            error: null,
-            isInitialized: true 
-          });
-        } catch (error: any) {
-          const errorMessage = error.response?.data?.message || 'Registration failed. Please try again.';
-          set({ 
-            isLoading: false, 
-            error: errorMessage,
-            isAuthenticated: false,
-            user: null,
-            token: null
-          });
-          throw new Error(errorMessage);
-        }
-      },
-
-      logout: async () => {
-        set({ isLoading: true });
-        try {
-          await authService.logout();
-        } catch (error) {
-          console.error('Logout error:', error);
-        } finally {
-          tokenManager.remove();
-          set({ 
-            user: null, 
-            token: null, 
-            isAuthenticated: false, 
-            isLoading: false,
-            error: null 
-          });
-        }
-      },
-
-      checkAuth: async () => {
-        const token = get().token;
-        if (!token) {
-          set({ isAuthenticated: false, user: null, isInitialized: true });
-          return;
-        }
-
-        set({ isLoading: true });
-        try {
-          const user = await authService.getCurrentUser();
-          if (user) {
-            set({ 
-              user, 
-              isAuthenticated: true, 
-              isLoading: false,
-              isInitialized: true 
-            });
-            return user;
-          } else {
-            // Token is invalid
-            tokenManager.remove();
-            set({ 
-              user: null, 
-              token: null, 
-              isAuthenticated: false, 
-              isLoading: false,
-              isInitialized: true 
-            });
-            return null;
-          }
-        } catch (error) {
-          console.error('Auth check failed:', error);
-          tokenManager.remove();
-          set({ 
-            user: null, 
-            token: null, 
-            isAuthenticated: false, 
-            isLoading: false,
-            isInitialized: true 
-          });
-          return null;
-        }
-      },
-
-      setUser: (user) => set({ user }),
-      
-      setToken: (token) => {
-        if (token) {
-          tokenManager.set(token);
-        } else {
-          tokenManager.remove();
-        }
-        set({ token, isAuthenticated: !!token });
-      },
-
-      clearError: () => set({ error: null }),
-    }),
-    {
-      name: 'auth-storage',
-      storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({
-        user: state.user,
-        token: state.token,
-        isAuthenticated: state.isAuthenticated,
-      }),
-      // NEW: Load token from storage on hydration
-      onRehydrateStorage: () => (state) => {
-        if (state) {
-          // Initialize auth after rehydration
-          state.initialize();
-        }
-      },
-    }
-  )
-);
+  return {
+    user,
+    isLoading,
+    isAuthenticated: !!token && !!user,
+    token,
+    login: loginMutation.mutateAsync,
+    register: registerMutation.mutateAsync,
+    logout: logoutMutation.mutateAsync,
+    checkAuth, // 3. Export checkAuth (refetch) for the OnboardingWizard
+    isSubmitting: loginMutation.isPending || registerMutation.isPending,
+    error: loginMutation.error || registerMutation.error || error,
+  };
+}

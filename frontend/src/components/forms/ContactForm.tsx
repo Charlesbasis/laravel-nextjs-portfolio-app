@@ -49,7 +49,7 @@ export default function ContactForm() {
           setSubmitStatus({ type: null, message: '' });
         }, 5000);
       },
-      onError: (error: any) => {
+      onError: (error: Error | unknown) => {
         setSubmitStatus({
           type: 'error',
           message: error.message || 'Failed to send message. Please try again.',

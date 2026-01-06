@@ -116,7 +116,7 @@ export function getStatusColor(
   );
 }
 
-export function debounce<T extends (...args: any[]) => any>(
+export function debounce<T extends (...args: unknown[]) => unknown>(
   func: T,
   wait: number
 ): (...args: Parameters<T>) => void {
@@ -130,7 +130,7 @@ export function debounce<T extends (...args: any[]) => any>(
 /**
  * Check if value is empty
  */
-export function isEmpty(value: any): boolean {
+export function isEmpty(value: unknown): boolean {
   if (value == null) return true;
   if (typeof value === 'string') return value.trim() === '';
   if (Array.isArray(value)) return value.length === 0;
@@ -162,7 +162,7 @@ export function getInitials(name: string): string {
     .slice(0, 2);
 }
 
-export function extractData<T>(response: any): T | null {
+export function extractData<T>(response: unknown): T | null {
   if (!response) return null;
   
   // Case 1: Standard API response { success: true, data: T }
@@ -179,7 +179,7 @@ export function extractData<T>(response: any): T | null {
   return response;
 }
 
-export function extractNestedData<T>(response: any, path: string): T | null {
+export function extractNestedData<T>(response: unknown, path: string): T | null {
   if (!response) return null;
   
   const keys = path.split('.');

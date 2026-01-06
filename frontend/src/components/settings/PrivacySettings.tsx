@@ -195,7 +195,7 @@ export default function PrivacySettings({ profile }: Props) {
                 </h4>
                 <p className="text-sm text-yellow-800">
                   Your portfolio is currently not visible to the public. Enable
-                  "Public Profile" to share your work with others.
+                  Public Profile to share your work with others.
                 </p>
               </div>
             </div>
