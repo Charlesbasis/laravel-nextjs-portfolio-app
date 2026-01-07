@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -76,5 +77,13 @@ class User extends Authenticatable
     public function hasCompletedOnboarding()
     {
         return $this->onboarding_completed;
+    }
+
+    /**
+     * Get the user type (e.g., Developer, Designer) associated with the user.
+     */
+    public function userType(): BelongsTo
+    {
+        return $this->belongsTo(UserType::class, 'user_type_id');
     }
 }

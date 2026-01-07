@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\Api\PublicController;
+use App\Http\Controllers\API\PublicController;
 use App\Http\Controllers\API\V1\AuthController;
 use App\Http\Controllers\API\V1\CertificationController;
 use App\Http\Controllers\API\V1\DashboardController;
@@ -10,6 +10,7 @@ use App\Http\Controllers\API\V1\ProfileController;
 use App\Http\Controllers\API\V1\ProjectsController;
 use App\Http\Controllers\API\V1\SkillsController;
 use App\Http\Controllers\API\V1\ContactController;
+use App\Http\Controllers\API\V1\TimelineController;
 use App\Http\Middleware\EnsureOnboardingCompleted;
 use Illuminate\Support\Facades\Route;
 
@@ -64,6 +65,7 @@ Route::prefix('v1')->group(function () {
         Route::prefix('onboarding')->group(function () {
             Route::get('/status', [OnboardingController::class, 'status']);
             Route::post('/complete', [OnboardingController::class, 'complete']);
+            Route::get('/check-username', [OnboardingController::class, 'checkUsername']);
         });
     });
 

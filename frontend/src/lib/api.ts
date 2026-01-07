@@ -1,5 +1,5 @@
 import axios, { AxiosResponse } from 'axios';
-import { ApiResponse } from '../types';
+import { ApiResponse, AuthResponse, RegisterData, User, UsernameCheckResponse } from '../types';
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1',
@@ -51,72 +51,32 @@ export const handleApiRequest = async <T>(
 };
 
 export const apiClient = {
-  // Auth
   login: (email: string, password: string) => 
-    api.post<ApiResponse<{token: string, user: Record<string, unknown>}>>('/login', { email, password }).then(res => {
+    api.post<AuthResponse>('/login', { email, password }).then(res => {
       if (res.data.data?.token) setToken(res.data.data.token);
-      return res.data.data;
+      return res.data; // Return the full AuthResponse
     }),
   
-  register: (data: Record<string, unknown>) => 
-    api.post<ApiResponse<{token: string, user: Record<string, unknown>}>>('/register', data).then(res => {
+  register: (data: RegisterData) => 
+    api.post<AuthResponse>('/register', data).then(res => {
       if (res.data.data?.token) setToken(res.data.data.token);
-      return res.data.data;
+      return res.data; // Return the full AuthResponse
     }),
   
   logout: () => api.post<ApiResponse<null>>('/logout').then(() => removeToken()),
   
-  getUser: <T = Record<string, unknown>>() => api.get<ApiResponse<T>>('/user').then(res => res.data.data),
-  
-  // Projects
-  getProjects: <T = unknown[]>(params?: Record<string, unknown>) => 
-    api.get<ApiResponse<T>>('/projects', { params }).then(res => res.data.data || (res.data as unknown as T)),
-
-  getProject: <T = unknown>(slug: string) => 
-    api.get<ApiResponse<T>>(`/projects/${slug}`).then(res => res.data.data || (res.data as unknown as T)),
-
-  createProject: (formData: FormData) => 
-    api.post<ApiResponse<Record<string, unknown>>>('/projects', formData, { 
-      headers: { 'Content-Type': 'multipart/form-data' }
-    }),
-
-  updateProject: (id: number, formData: FormData) => 
-    api.post<ApiResponse<Record<string, unknown>>>(`/projects/${id}`, formData, { 
-      headers: { 'Content-Type': 'multipart/form-data' }
-    }),
-  
-  deleteProject: (id: number) => api.delete<ApiResponse<null>>(`/projects/${id}`),
-  
-  // Skills
-  getSkills: <T = unknown[]>(params?: Record<string, unknown>) => 
-    api.get<ApiResponse<T>>('/skills', { params }).then(res => res.data.data || (res.data as unknown as T)),
-  
-  createSkill: (data: Record<string, unknown>) => api.post<ApiResponse<Record<string, unknown>>>('/skills', data),
-  
-  updateSkill: (id: number, data: Record<string, unknown>) => api.put<ApiResponse<Record<string, unknown>>>(`/skills/${id}`, data),
-  
-  deleteSkill: (id: number) => api.delete<ApiResponse<null>>(`/skills/${id}`),
-  
-  // Profile
-  getPublicProfile: <T = unknown>(username: string) => 
-    api.get<ApiResponse<T>>(`/users/${username}/profile`).then(res => res.data.data || (res.data as unknown as T)),
-    
-  getCurrentProfile: <T = unknown>() => 
-    api.get<ApiResponse<T>>('/profile').then(res => res.data.data || (res.data as unknown as T)),
-    
-  updateProfile: (data: Record<string, unknown>) => api.put<ApiResponse<Record<string, unknown>>>('/profile', data),
-
-  getExperiences: <T = unknown[]>(username?: string) => 
-    api.get<ApiResponse<T>>(username ? `/users/${username}/experiences` : '/experiences').then(res => res.data.data || (res.data as unknown as T)),
+  // Use the User interface here
+  getUser: () => api.get<ApiResponse<User>>('/user').then(res => res.data.data),
   
   checkUsername: (username: string) => 
-    api.get<ApiResponse<{available: boolean}>>(`/onboarding/check-username/${username}`).then(res => res.data),
-    
-  completeOnboarding: (data: Record<string, unknown>) => 
-    api.post<ApiResponse<Record<string, unknown>>>('/onboarding/complete', data).then(res => res.data),
-    
-  submitContact: (data: Record<string, unknown>) => 
-    api.post<ApiResponse<null>>('/contact/submit', data).then(res => res.data),
+    api.get<UsernameCheckResponse>(`/onboarding/check-username`, { 
+      params: { username } 
+    }).then(res => res.data),
+
+  // Update completeOnboarding to use the OnboardingData type if preferred
+  completeOnboarding: (data: any) => 
+    api.post<ApiResponse<{ user: User, redirect_url: string }>>('/onboarding/complete', data)
+      .then(res => res.data),
 };
 
 export { getToken, setToken, removeToken };

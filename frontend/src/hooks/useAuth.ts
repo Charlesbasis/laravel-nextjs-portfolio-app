@@ -1,20 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { apiClient, getToken } from '@/src/lib/api';
-
-interface AuthResponse {
-  token: string;
-  user: Record<string, unknown>;
-  needs_onboarding?: boolean;
-}
+import { User, AuthResponse, LoginCredentials, RegisterData } from '@/src/types';
 
 export function useAuth() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const token = getToken();
 
-  // Get current user
-  const { data: user, isLoading, error, refetch: checkAuth } = useQuery({
+  const { data: user, isLoading, error, refetch: checkAuth, isFetched } = useQuery<User | null>({
     queryKey: ['user'],
     queryFn: apiClient.getUser,
     enabled: !!token,
@@ -22,13 +16,13 @@ export function useAuth() {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Login mutation
   const loginMutation = useMutation({
-    mutationFn: ({ email, password }: { email: string; password: string }) => 
-      apiClient.login(email, password) as Promise<AuthResponse>, // 2. Cast the response
-    onSuccess: (data) => {
-      queryClient.setQueryData(['user'], data.user);
-      if (data.needs_onboarding) {
+    // Type the parameter to LoginCredentials
+    mutationFn: (credentials: LoginCredentials) => apiClient.login(credentials.email, credentials.password),
+    onSuccess: (response: AuthResponse) => {
+      // Access via response.data.user per your AuthResponse interface
+      queryClient.setQueryData(['user'], response.data.user);
+      if (!response.data.user.onboarding_completed) {
         router.push('/onboarding');
       } else {
         router.push('/dashboard');
@@ -36,16 +30,15 @@ export function useAuth() {
     },
   });
 
-  // Register mutation
   const registerMutation = useMutation({
-    mutationFn: (userData: any) => apiClient.register(userData) as Promise<AuthResponse>,
-    onSuccess: (data) => {
-      queryClient.setQueryData(['user'], data.user);
+    // Use RegisterData here
+    mutationFn: (userData: RegisterData) => apiClient.register(userData),
+    onSuccess: (response: AuthResponse) => {
+      queryClient.setQueryData(['user'], response.data.user);
       router.push('/onboarding');
     },
   });
 
-  // Logout mutation
   const logoutMutation = useMutation({
     mutationFn: apiClient.logout,
     onSuccess: () => {
@@ -57,13 +50,14 @@ export function useAuth() {
   return {
     user,
     isLoading,
+    isInitialized: !token || isFetched,
     isAuthenticated: !!token && !!user,
     token,
     login: loginMutation.mutateAsync,
     register: registerMutation.mutateAsync,
     logout: logoutMutation.mutateAsync,
-    checkAuth, // 3. Export checkAuth (refetch) for the OnboardingWizard
+    checkAuth,
     isSubmitting: loginMutation.isPending || registerMutation.isPending,
-    error: loginMutation.error || registerMutation.error || error,
+    error: (loginMutation.error as Error) || (registerMutation.error as Error) || (error as Error) || null,
   };
 }

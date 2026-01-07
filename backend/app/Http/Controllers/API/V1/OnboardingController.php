@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\CompleteOnboardingRequest;
 use App\Models\User;
 use App\Models\UserProfile;
 use App\Models\Projects;
@@ -30,46 +31,26 @@ class OnboardingController extends Controller
     /**
      * Complete onboarding - Single step
      */
-    public function complete(Request $request)
+    public function complete(CompleteOnboardingRequest $request)
     {
-        $validator = Validator::make($request->all(), [
-            'username' => 'required|string|unique:user_profiles,username',
-            'full_name' => 'required|string|max:255',
-            'job_title' => 'required|string|max:255',
-            'bio' => 'nullable|string',
-            'location' => 'nullable|string',
-            'tagline' => 'nullable|string|max:500',
-            'project' => 'nullable|array',
-            'project.title' => 'required_with:project|string',
-            'project.description' => 'required_with:project|string',
-            'project.technologies' => 'nullable|array',
-            'skills' => 'nullable|array',
-            'skills.*' => 'string',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'errors' => $validator->errors(),
-            ], 422);
-        }
-
         $user = $request->user();
+        $validated = $request->validated(); // Get only validated data
 
         try {
-            DB::transaction(function () use ($user, $request) {
-                // Create profile
-                UserProfile::create([
-                    'user_id' => $user->id,
-                    'username' => $request->username,
-                    'full_name' => $request->full_name,
-                    'email' => $user->email,
-                    'job_title' => $request->job_title,
-                    'bio' => $request->bio,
-                    'location' => $request->location,
-                    'tagline' => $request->tagline,
-                    'is_public' => true,
-                ]);
+            DB::transaction(function () use ($user, $validated, $request) {
+                UserProfile::updateOrCreate(
+                    ['user_id' => $user->id], // Search criteria
+                    [
+                        'username' => $validated['username'],
+                        'full_name' => $validated['full_name'],
+                        'email' => $user->email,
+                        'job_title' => $validated['job_title'],
+                        'bio' => $validated['bio'] ?? null,
+                        'location' => $validated['location'] ?? null,
+                        'tagline' => $validated['tagline'] ?? null,
+                        'is_public' => true,
+                    ]
+                );
 
                 // Create project if provided
                 if ($request->has('project')) {
@@ -113,5 +94,27 @@ class OnboardingController extends Controller
                 'message' => 'Failed to complete onboarding: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    public function checkUsername(Request $request)
+    {
+        $username = strtolower($request->query('username'));
+
+        // 1. Validate format immediately to save a DB query
+        if (!preg_match('/^[a-z0-9_\-]+$/', $username)) {
+            return response()->json([
+                'available' => false,
+                'message' => 'Invalid format'
+            ]);
+        }
+
+        // 2. Check existence, excluding the current authenticated user
+        $exists = \App\Models\UserProfile::where('username', $username)
+            ->where('user_id', '!=', auth()->id())
+            ->exists();
+
+        return response()->json([
+            'available' => !$exists,
+        ]);
     }
 }

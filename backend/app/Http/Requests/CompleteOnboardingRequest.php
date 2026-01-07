@@ -29,9 +29,10 @@ class CompleteOnboardingRequest extends FormRequest
             'username' => [
                 'required',
                 'string',
-                'alpha_dash',
+                'min:3',
                 'max:255',
-                Rule::unique('user_profiles', 'username')->ignore($user?->id, 'user_id')
+                'regex:/^[a-z0-9_\-]+$/',
+                'unique:user_profiles,username,' . auth()->id() . ',user_id',
             ],
             'email' => 'sometimes|email', // Add email validation
             'job_title' => 'required|string',

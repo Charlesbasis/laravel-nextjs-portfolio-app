@@ -2,7 +2,7 @@
 
 namespace App\Providers;
 
-use App\Models\Portfolio\Project;
+use App\Models\Projects;
 use App\Models\Service;
 use App\Models\Skills;
 use App\Models\Testimonial;
@@ -22,7 +22,7 @@ class RepositoryServiceProvider extends ServiceProvider
     {
         try {
             $this->app->bind(ProjectRepository::class, function ($app) {
-                return new ProjectRepository($app->make(Project::class));
+                return new ProjectRepository($app->make(Projects::class));
             });
 
             $this->app->bind(SkillRepository::class, function ($app) {

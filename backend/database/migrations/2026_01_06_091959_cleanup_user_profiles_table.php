@@ -17,7 +17,6 @@ return new class extends Migration
                     $table->dropColumn('user_type_id');
                 }
 
-                // Check each column individually before dropping
                 $columnsToDrop = ['headline', 'current_status', 'institution', 'field_of_interest'];
                 foreach ($columnsToDrop as $column) {
                     if (Schema::hasColumn('user_profiles', $column)) {
@@ -25,7 +24,6 @@ return new class extends Migration
                     }
                 }
 
-                // Ensure the column exists before trying to change it
                 if (Schema::hasColumn('user_profiles', 'custom_fields')) {
                     $table->json('custom_fields')->nullable()->change();
                 }

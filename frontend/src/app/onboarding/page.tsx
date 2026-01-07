@@ -29,7 +29,7 @@ export default function OnboardingPage() {
     queryKey: ['username-check', usernameToCheck],
     queryFn: () => apiClient.checkUsername(usernameToCheck),
     enabled: usernameToCheck.length >= 3,
-    staleTime: 30000,
+    staleTime: 3,
   });
 
   // Complete onboarding mutation
@@ -57,10 +57,22 @@ export default function OnboardingPage() {
     return () => clearTimeout(timer);
   }, [formData.username]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!usernameCheck?.available) return;
-    await completeMutation.mutateAsync(formData);
+
+    completeMutation.mutate(formData);
+  };
+
+  // 2. Improve type safety for the input change handler
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: name === 'username' ? value.toLowerCase() : value
+    }));
   };
 
   if (authLoading) {
@@ -87,10 +99,11 @@ export default function OnboardingPage() {
               <input
                 type="text"
                 required
+                name="username"
                 value={formData.username}
-                onChange={(e) => setFormData({ ...formData, username: e.target.value.toLowerCase() })}
+                onChange={handleInputChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                pattern="[a-z0-9_-]+"
+                pattern="[a-z0-9_\-]+"
                 minLength={3}
               />
               {formData.username.length >= 3 && (
