@@ -24,10 +24,16 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401 && typeof window !== 'undefined') {
-      removeToken();
-      if (!window.location.pathname.startsWith('/auth')) {
-        window.location.href = '/auth/login';
+    if (typeof window !== 'undefined') {
+      if (error.response?.status === 401) {
+        removeToken();
+        if (!window.location.pathname.startsWith('/auth')) {
+          window.location.href = '/auth/login';
+        }
+      } else if (error.response?.status === 403 && error.response?.data?.redirect === '/onboarding') {
+        if (window.location.pathname !== '/onboarding') {
+          window.location.href = '/onboarding';
+        }
       }
     }
     return Promise.reject(error);

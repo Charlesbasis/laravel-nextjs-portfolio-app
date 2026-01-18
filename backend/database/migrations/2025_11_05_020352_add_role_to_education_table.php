@@ -28,8 +28,10 @@ return new class extends Migration
             $table->index(['user_id', 'role']);
         });
         
-        // Update the table comment to reflect the new purpose
-        DB::statement("ALTER TABLE education COMMENT = 'Stores both educational experiences as student and teaching experiences as teacher'");
+        // Update the table comment to reflect the new purpose (MySQL only)
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement("ALTER TABLE education COMMENT = 'Stores both educational experiences as student and teaching experiences as teacher'");
+        }
     }
 
     /**

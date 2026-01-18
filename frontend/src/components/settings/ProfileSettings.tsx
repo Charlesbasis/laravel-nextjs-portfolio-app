@@ -2,13 +2,13 @@
 
 import { useState, useRef } from 'react';
 import { UserProfile } from '@/src/types';
-import { 
-  useUpdateProfile, 
-  useUploadAvatar, 
-  useUploadCoverImage,
-  useDeleteAvatar,
-  useDeleteCoverImage
-} from '@/src/hooks/useProfile';
+// import { 
+//   useUpdateProfile, 
+//   useUploadAvatar, 
+//   useUploadCoverImage,
+//   useDeleteAvatar,
+//   useDeleteCoverImage
+// } from '@/src/hooks/useProfile';
 import { Camera, Trash2, Upload, Check, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 

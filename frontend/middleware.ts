@@ -21,7 +21,7 @@ export async function middleware(request: NextRequest) {
       if (response.ok) {
         const data = await response.json();
         
-        if (data.completed) {
+        if (!data.completed) {
           return NextResponse.redirect(new URL('/onboarding', request.url));
         }
       }
@@ -43,7 +43,7 @@ export async function middleware(request: NextRequest) {
       if (response.ok) {
         const data = await response.json();
         
-        if (data.data?.completed) {
+        if (data.completed) {
           return NextResponse.redirect(new URL('/dashboard', request.url));
         }
       }

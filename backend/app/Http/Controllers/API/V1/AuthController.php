@@ -174,11 +174,7 @@ class AuthController extends Controller
         }
 
         if ($user->hasVerifiedEmail()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Email already verified',
-                'redirect' => env('FRONTEND_URL') . '/auth/login?verified=already',
-            ]);
+            return redirect(env('FRONTEND_URL') . '/auth/login?verified=already');
         }
 
         $user->markEmailAsVerified();
@@ -188,10 +184,6 @@ class AuthController extends Controller
         //     'email' => $user->email,
         // ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Email verified successfully!',
-            'redirect' => env('FRONTEND_URL') . '/auth/login?verified=true',
-        ]);
+        return redirect(env('FRONTEND_URL') . '/auth/login?verified=true');
     }
 }
